@@ -2,17 +2,17 @@
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 
+
 namespace MO
 {
     public delegate float func_n(Vector x);
-    public struct Vector : IEquatable<Vector>
+    public class Vector : IEquatable<Vector>
     {
-        private float[] data;
+        private List<float> data;
         public int Size
         {
-            get { return data.Length; }
+            get { return data.Count; }
         }
-
         public static Vector operator +(Vector a, Vector b)
         {
             if (a.Size != b.Size)
@@ -40,7 +40,6 @@ namespace MO
         {
             return a + b;
         }
-
         public static Vector operator -(Vector a, Vector b)
         {
             if (a.Size != b.Size)
@@ -73,7 +72,6 @@ namespace MO
             }
             return res;
         }
-
         public static Vector operator *(Vector a, float val)
         {
             Vector res = new Vector(a);
@@ -87,12 +85,10 @@ namespace MO
         {
             return a * val;
         }
-
         public static implicit operator Vector(float[] value)
         {
             return new Vector(value);
         }
-
         public static Vector Direction(Vector a, Vector b)
         {
             if (a.Size != b.Size)
@@ -101,7 +97,7 @@ namespace MO
             }
             return (b - a).Normalized;
         }
-        public static Vector Direvative(func_n func, Vector x, float eps = 1e-6f)
+        public static Vector Gradient(func_n func, Vector x, float eps = 1e-6f)
         {
             Vector x_l = new Vector(x);
             Vector x_r = new Vector(x);
@@ -118,7 +114,33 @@ namespace MO
             }
             return df;
         }
+        public static float Partial(func_n func, Vector x, int coord_index, float eps = 1e-6f)
+        {
+            if (x.Size <= coord_index)
+            {
+                throw new Exception("Partial derivative index out of bounds!");
+            }
+            x[coord_index] += eps;
+            float f_r = func(x);
+            x[coord_index] -= (2.0f * eps);
+            float f_l = func(x);
+            x[coord_index] += eps;
+            return (f_r - f_l) / eps * 0.5f;
+        }
 
+        public static float Partial2(func_n func, Vector x, int coord_index_1, int coord_index_2, float eps = 1e-6f)
+        {
+            if (x.Size <= coord_index_2)
+            {
+                throw new Exception("Partial derivative index out of bounds!");
+            }
+            x[coord_index_2] -= eps;
+            float f_l = Partial(func, x, coord_index_1, eps);
+            x[coord_index_2] += (2 * eps);
+            float f_r = Partial(func, x, coord_index_1, eps);
+            x[coord_index_2] -= eps;
+            return (f_r - f_l) / eps * 0.5f;
+        }
         public float Magnitude
         {
             get
@@ -146,8 +168,31 @@ namespace MO
         }
         public Vector Normalize()
         {
-            this = Normalized;
+            float inv_mag = 1.0f / Magnitude;
+            for (int i = 0; i < Size; i++)
+            {
+                this[i] *= inv_mag;
+            }
             return this;
+        }
+        public float Dot(Vector other)
+        {
+            if (Size != other.Size)
+            {
+                throw new Exception("Unable vector dot multiply");
+            }
+
+            float dot = 0.0f;
+
+            for (int i = 0; i < other.Size; i++)
+            {
+                dot += this[i] * other[i];
+            }
+            return dot;
+        }
+        public static float Dot(Vector a, Vector b)
+        {
+            return a.Dot(b);
         }
         public void Resize(int size)
         {
@@ -155,19 +200,31 @@ namespace MO
             {
                 return;
             }
-            float[] data_ = new float[size];
-            Array.Copy(data, data_, Math.Min(size, Size));
-            data = data_;
+
+            if (size > Size)
+            {
+                for (int i = 0; i < size - Size; i++)
+                {
+                    data.Add(0.0f);
+                }
+                return;
+            }
+
+            data.RemoveRange(size, Size);
+        }
+
+        public void PushBack(float val)
+        {
+            data.Add(val);
         }
         public override string ToString()
         {
             string s = "{ ";
-            for (int i = 0; i < data.Length - 1; i++)
+            for (int i = 0; i < data.Count - 1; i++)
             {
-                s += data[i].ToString();
-                s += ", ";
+                s += string.Format("{0,0}, ", String.Format("{0:0.000}", data[i]));// .ToString();
             }
-            s += data[data.Length - 1].ToString();
+            s += string.Format("{0,0}", String.Format("{0:0.000}", data[data.Count - 1]));// data[data.Length - 1].ToString();
             s += " }";
             return s;
         }
@@ -177,7 +234,7 @@ namespace MO
             {
                 return false;
             }
-            return Equals((Vector)obj);
+            return Equals(obj as Vector);
         }
         public bool Equals([AllowNull] Vector other)
         {
@@ -211,16 +268,19 @@ namespace MO
         }
         public Vector(float[] _data)
         {
-            data = _data;
+            data = new List<float>(_data);
         }
-        public Vector(int size)
+        public Vector(int size, float defaultValue = 0.0f)
         {
-            data = new float[size];
+            data = new List<float>(size);
+            for (int i = 0; i < size; i++)
+            {
+                data.Add(defaultValue);
+            }
         }
         public Vector(Vector vect)
         {
-            data = new float[vect.Size];
-            Array.Copy(vect.data, data, vect.Size);
+            data = new List<float>(vect.data);
         }
     }
 }
