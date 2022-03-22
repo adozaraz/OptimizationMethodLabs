@@ -112,13 +112,13 @@ namespace MO
             float y1, y0;
             while (true)
             {
-                for (int i = 0; i < x0.Size; i++)
+                for (int i = 0; i < x0.Size; ++i)
                 {
-                    cntr++;
+                    ++cntr;
                     if (cntr == max_iters)
                     {
 #if DEBUG
-                        Console.WriteLine("per coord descend iterations number : " + cntr);
+                        Console.WriteLine($"per coord descend iterations number : {cntr}");
 #endif
                         return x0;
                     }
@@ -128,20 +128,13 @@ namespace MO
                     y1 = f(x1);
                     x1[i] -= eps;
 
-                    if (y0 > y1)
-                    {
-                        x1[i] += step;
-                    }
-
-                    else
-                    {
-                        x1[i] -= step;
-                    }
+                    if (y0 > y1) x1[i] += step;
+                    else x1[i] -= step;
                     x1 = Dichotomy(f, x0, x1, eps, max_iters);
                     if ((x1 - x0).Magnitude < eps)
                     {
 #if DEBUG
-                        Console.WriteLine("per coord descend iterations number : " + cntr);
+                        Console.WriteLine($"per coord descend iterations number : {cntr}");
 #endif
                         return x0;
                     }

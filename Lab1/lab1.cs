@@ -44,7 +44,7 @@ namespace MO
             if (x0 > x1) Swap(ref x0, ref x1);
             float a = x0, b = x1;
             int i = 0;
-            for ( ; i++ < max_iter; )
+            for ( ; i++ != max_iter; )
             {
                 if (MathF.Abs(x1 - x0) < eps) break;
                 x0 = a + (b - a) / Phi;
@@ -70,7 +70,7 @@ namespace MO
             float f1 = 1.0f, f2 = 2.0f, f3 = 3.0f;
             int i = 0, max_iters = findN((b - a) / eps);
 
-            for (; i++ < max_iters;)
+            for (; i++ != max_iters;)
             {
                 if (MathF.Abs(x1 - x0) < eps) break;
 
@@ -106,10 +106,6 @@ namespace MO
                 f2 = f1 - f2;
                 if (f1 > value) return i;
             }
-        }
-        public static float parabole(float x)
-        {
-            return MathF.Pow(x, 2.0f);
         }
         public static void Lab1Tester(func_1 f)
         {
