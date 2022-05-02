@@ -5,152 +5,25 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace MO
 {
-    public delegate float func_n(Vector x);
+    public delegate double func_n(Vector x);
     public class Vector : IEquatable<Vector>
     {
-        private List<float> data;
-        public int Size
+        private int fillness = 0;
+        private double[] data;
+        public int Count
         {
-            get { return data.Count; }
+            get { return fillness; }
         }
-        public static Vector operator +(Vector a, Vector b)
-        {
-            if (a.Size != b.Size)
-            {
-                throw new Exception("error:: operator+:: vectors of different dimensions");
-            }
-
-            Vector res = new Vector(a);
-            for (int i = 0; i < a.Size; i++)
-            {
-                res[i] = a[i] + b[i];
-            }
-            return res;
-        }
-        public static Vector operator +(Vector a, float b)
-        {
-            Vector res = new Vector(a);
-            for (int i = 0; i < a.Size; i++)
-            {
-                res[i] = a[i] + b;
-            }
-            return res;
-        }
-        public static Vector operator +(float b, Vector a)
-        {
-            return a + b;
-        }
-        public static Vector operator -(Vector a, Vector b)
-        {
-            if (a.Size != b.Size)
-            {
-                throw new Exception("error:: operator-:: vectors of different dimensions");
-            }
-
-            Vector res = new Vector(a);
-            for (int i = 0; i < a.Size; i++)
-            {
-                res[i] = a[i] - b[i];
-            }
-            return res;
-        }
-        public static Vector operator -(Vector a, float b)
-        {
-            Vector res = new Vector(a);
-            for (int i = 0; i < a.Size; i++)
-            {
-                res[i] = a[i] - b;
-            }
-            return res;
-        }
-        public static Vector operator -(float b, Vector a)
-        {
-            Vector res = new Vector(a);
-            for (int i = 0; i < a.Size; i++)
-            {
-                res[i] = b - a[i];
-            }
-            return res;
-        }
-        public static Vector operator *(Vector a, float val)
-        {
-            Vector res = new Vector(a);
-            for (int i = 0; i < a.Size; i++)
-            {
-                res[i] = a[i] * val;
-            }
-            return res;
-        }
-        public static Vector operator *(float val, Vector a)
-        {
-            return a * val;
-        }
-        public static implicit operator Vector(float[] value)
-        {
-            return new Vector(value);
-        }
-        public static Vector Direction(Vector a, Vector b)
-        {
-            if (a.Size != b.Size)
-            {
-                return a;
-            }
-            return (b - a).Normalized;
-        }
-        public static Vector Gradient(func_n func, Vector x, float eps = 1e-6f)
-        {
-            Vector x_l = new Vector(x);
-            Vector x_r = new Vector(x);
-            Vector df = new Vector(x.Size);
-            for (int i = 0; i < x.Size; i++)
-            {
-                x_l[i] -= eps;
-                x_r[i] += eps;
-
-                df[i] = (func(x_r) - func(x_l)) * (0.5f / eps);
-
-                x_l[i] += eps;
-                x_r[i] -= eps;
-            }
-            return df;
-        }
-        public static float Partial(func_n func, Vector x, int coord_index, float eps = 1e-6f)
-        {
-            if (x.Size <= coord_index)
-            {
-                throw new Exception("Partial derivative index out of bounds!");
-            }
-            x[coord_index] += eps;
-            float f_r = func(x);
-            x[coord_index] -= (2.0f * eps);
-            float f_l = func(x);
-            x[coord_index] += eps;
-            return (f_r - f_l) / eps * 0.5f;
-        }
-
-        public static float Partial2(func_n func, Vector x, int coord_index_1, int coord_index_2, float eps = 1e-6f)
-        {
-            if (x.Size <= coord_index_2)
-            {
-                throw new Exception("Partial derivative index out of bounds!");
-            }
-            x[coord_index_2] -= eps;
-            float f_l = Partial(func, x, coord_index_1, eps);
-            x[coord_index_2] += (2 * eps);
-            float f_r = Partial(func, x, coord_index_1, eps);
-            x[coord_index_2] -= eps;
-            return (f_r - f_l) / eps * 0.5f;
-        }
-        public float Magnitude
+        public double Magnitude
         {
             get
             {
-                float mag = 0.0f;
-                foreach (float element in data)
+                double mag = 0.0;
+                foreach (double element in data)
                 {
                     mag += (element * element);
                 }
-                return MathF.Sqrt(mag);
+                return Math.Sqrt(mag);
             }
         }
         public Vector Normalized
@@ -158,8 +31,8 @@ namespace MO
             get
             {
                 Vector v = new Vector(this);
-                float inv_mag = 1.0f / v.Magnitude;
-                for (int i = 0; i < v.Size; i++)
+                double inv_mag = 1.0 / v.Magnitude;
+                for (int i = 0; i < v.Count; i++)
                 {
                     v[i] *= inv_mag;
                 }
@@ -168,63 +41,56 @@ namespace MO
         }
         public Vector Normalize()
         {
-            float inv_mag = 1.0f / Magnitude;
-            for (int i = 0; i < Size; i++)
+            double inv_mag = 1.0 / Magnitude;
+            for (int i = 0; i < Count; i++)
             {
                 this[i] *= inv_mag;
             }
             return this;
         }
-        public float Dot(Vector other)
+        public double Dot(Vector other)
         {
-            if (Size != other.Size)
+            if (Count != other.Count)
             {
                 throw new Exception("Unable vector dot multiply");
             }
 
-            float dot = 0.0f;
+            double dot = 0.0;
 
-            for (int i = 0; i < other.Size; i++)
+            for (int i = 0; i < other.Count; i++)
             {
-                dot += this[i] * other[i];
+                dot += data[i] * other[i];
             }
             return dot;
         }
-        public static float Dot(Vector a, Vector b)
+
+        public void PushBack(double val)
         {
-            return a.Dot(b);
-        }
-        public void Resize(int size)
-        {
-            if (size == Size)
+            if (fillness != data.Length)
             {
+                data[fillness] = val;
+                fillness++;
                 return;
             }
 
-            if (size > Size)
+            double[] new_data = new double[(int)(data.Length * 1.5)];
+
+            for (int i = 0; i < Count; i++)
             {
-                for (int i = 0; i < size - Size; i++)
-                {
-                    data.Add(0.0f);
-                }
-                return;
+                new_data[i] = data[i];
             }
-
-            data.RemoveRange(size, Size);
-        }
-
-        public void PushBack(float val)
-        {
-            data.Add(val);
+            new_data[fillness] = val;
+            fillness++;
+            data = new_data;
         }
         public override string ToString()
         {
             string s = "{ ";
-            for (int i = 0; i < data.Count - 1; i++)
+            for (int i = 0; i < Count - 1; i++)
             {
-                s += string.Format("{0,0}, ", String.Format("{0:0.000}", data[i]));// .ToString();
+                s += string.Format("{0,0}, ", String.Format("{0:0.000}", data[i]));
             }
-            s += string.Format("{0,0}", String.Format("{0:0.000}", data[data.Count - 1]));// data[data.Length - 1].ToString();
+            s += string.Format("{0,0}", String.Format("{0:0.000}", data[Count - 1]));
             s += " }";
             return s;
         }
@@ -238,11 +104,11 @@ namespace MO
         }
         public bool Equals([AllowNull] Vector other)
         {
-            if (other.Size != Size)
+            if (other.Count != Count)
             {
                 return false;
             }
-            for (int i = 0; i < other.Size; i++)
+            for (int i = 0; i < other.Count; i++)
             {
                 if (other[i] != this[i])
                 {
@@ -255,7 +121,7 @@ namespace MO
         {
             return HashCode.Combine(data);
         }
-        public float this[int id]
+        public double this[int id]
         {
             get
             {
@@ -266,21 +132,170 @@ namespace MO
                 data[id] = value;
             }
         }
-        public Vector(float[] _data)
+        public Vector(params double[] _data)
         {
-            data = new List<float>(_data);
+            fillness = _data.Length;
+
+            data = new double[(int)(fillness * 1.5)];
+
+            for (int i = 0; i < fillness; i++)
+            {
+                data[i] = _data[i];
+            }
         }
-        public Vector(int size, float defaultValue = 0.0f)
+        public Vector(int size)// double defaultValue = 0.0)
         {
-            data = new List<float>(size);
+            fillness = size;
+
+            data = new double[(int)(size * 1.5)];
+
             for (int i = 0; i < size; i++)
             {
-                data.Add(defaultValue);
+                data[i] = (0.0);
             }
         }
         public Vector(Vector vect)
         {
-            data = new List<float>(vect.data);
+            fillness = vect.fillness;
+
+            data = new double[vect.data.Length];
+
+            for (int i = 0; i < vect.fillness; i++)
+            {
+                data[i] = vect.data[i];
+            }
+        }
+        public static Vector operator +(Vector a, Vector b)
+        {
+            if (a.Count != b.Count)
+            {
+                throw new Exception("error:: operator+:: vectors of different dimensions");
+            }
+
+            Vector res = new Vector(a);
+            for (int i = 0; i < a.Count; i++)
+            {
+                res[i] = a[i] + b[i];
+            }
+            return res;
+        }
+        public static Vector operator +(Vector a, double b)
+        {
+            Vector res = new Vector(a);
+            for (int i = 0; i < a.Count; i++)
+            {
+                res[i] = a[i] + b;
+            }
+            return res;
+        }
+        public static Vector operator +(double b, Vector a)
+        {
+            return a + b;
+        }
+        public static Vector operator -(Vector a, Vector b)
+        {
+            if (a.Count != b.Count)
+            {
+                throw new Exception("error:: operator-:: vectors of different dimensions");
+            }
+
+            Vector res = new Vector(a);
+            for (int i = 0; i < a.Count; i++)
+            {
+                res[i] = a[i] - b[i];
+            }
+            return res;
+        }
+        public static Vector operator -(Vector a, double b)
+        {
+            Vector res = new Vector(a);
+            for (int i = 0; i < a.Count; i++)
+            {
+                res[i] = a[i] - b;
+            }
+            return res;
+        }
+        public static Vector operator -(double b, Vector a)
+        {
+            Vector res = new Vector(a);
+            for (int i = 0; i < a.Count; i++)
+            {
+                res[i] = b - a[i];
+            }
+            return res;
+        }
+        public static Vector operator *(Vector a, double val)
+        {
+            Vector res = new Vector(a);
+            for (int i = 0; i < a.Count; i++)
+            {
+                res[i] = a[i] * val;
+            }
+            return res;
+        }
+        public static Vector operator *(double val, Vector a)
+        {
+            return a * val;
+        }
+        public static implicit operator Vector(double[] value)
+        {
+            return new Vector(value);
+        }
+        public static Vector Direction(Vector a, Vector b)
+        {
+            if (a.Count != b.Count)
+            {
+                return a;
+            }
+            return (b - a).Normalized;
+        }
+        public static Vector Gradient(func_n func, Vector x, double eps = 1e-6)
+        {
+            Vector x_l = new Vector(x);
+            Vector x_r = new Vector(x);
+            Vector df = new Vector(x.Count);
+            for (int i = 0; i < x.Count; i++)
+            {
+                x_l[i] -= eps;
+                x_r[i] += eps;
+
+                df[i] = (func(x_r) - func(x_l)) * (0.5 / eps);
+
+                x_l[i] += eps;
+                x_r[i] -= eps;
+            }
+            return df;
+        }
+        public static double Partial(func_n func, Vector x, int coord_index, double eps = 1e-6)
+        {
+            if (x.Count <= coord_index)
+            {
+                throw new Exception("Partial derivative index out of bounds!");
+            }
+            x[coord_index] += eps;
+            double f_r = func(x);
+            x[coord_index] -= (2.0 * eps);
+            double f_l = func(x);
+            x[coord_index] += eps;
+            return (f_r - f_l) / eps * 0.5;
+        }
+
+        public static double Partial2(func_n func, Vector x, int coord_index_1, int coord_index_2, double eps = 1e-6)
+        {
+            if (x.Count <= coord_index_2)
+            {
+                throw new Exception("Partial derivative index out of bounds!");
+            }
+            x[coord_index_2] -= eps;
+            double f_l = Partial(func, x, coord_index_1, eps);
+            x[coord_index_2] += (2 * eps);
+            double f_r = Partial(func, x, coord_index_1, eps);
+            x[coord_index_2] -= eps;
+            return (f_r - f_l) / eps * 0.5;
+        }
+        public static double Dot(Vector a, Vector b)
+        {
+            return a.Dot(b);
         }
     }
 }
